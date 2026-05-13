@@ -11,9 +11,9 @@ import com.mehdi.banking_api.model.TransactionStatus;
 import com.mehdi.banking_api.model.User;
 import com.mehdi.banking_api.repository.AccountRepository;
 import com.mehdi.banking_api.repository.TransactionRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +23,7 @@ import java.util.List;
 public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
+    private final TransactionAuditService transactionAuditService;
 
     public List<TransactionResponse> getHistory(String iban, User connectedUser) {
         Account account = accountRepository.findByIban(iban)
@@ -68,7 +69,7 @@ public class TransactionService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        transactionRepository.save(transaction);
+        transactionAuditService.createPending(transaction);
 
         try {
             sender.setBalance(sender.getBalance() - request.getAmount());
@@ -77,8 +78,7 @@ public class TransactionService {
             accountRepository.save(receiver);
             transaction.setStatus(TransactionStatus.COMPLETED);
         } catch (Exception e) {
-            transaction.setStatus(TransactionStatus.FAILED);
-            transactionRepository.save(transaction);
+            transactionAuditService.markAsFailed(transaction);
             throw e;
         }
 

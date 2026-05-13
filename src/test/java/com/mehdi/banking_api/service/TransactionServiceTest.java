@@ -34,7 +34,7 @@ class TransactionServiceTest {
     private AccountRepository accountRepository;
 
     @Mock
-    private AccountService accountService;
+    private TransactionAuditService transactionAuditService;
 
     @InjectMocks
     private TransactionService transactionService;
@@ -124,6 +124,7 @@ class TransactionServiceTest {
 
         when(accountRepository.findByIban("LU111")).thenReturn(Optional.of(sender));
         when(accountRepository.findByIban("LU222")).thenReturn(Optional.of(receiver));
+        when(transactionAuditService.createPending(any(Transaction.class))).thenReturn(saved);
         when(transactionRepository.save(any(Transaction.class))).thenReturn(saved);
 
         TransactionResponse response = transactionService.transfer(user, request);
