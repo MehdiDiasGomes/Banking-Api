@@ -3,6 +3,7 @@ package com.mehdi.banking_api.service;
 import com.mehdi.banking_api.dto.request.TransferRequest;
 import com.mehdi.banking_api.dto.response.TransactionResponse;
 import com.mehdi.banking_api.exception.BusinessException;
+import com.mehdi.banking_api.exception.ForbiddenException;
 import com.mehdi.banking_api.exception.ResourceNotFoundException;
 import com.mehdi.banking_api.model.Account;
 import com.mehdi.banking_api.model.Transaction;
@@ -28,7 +29,7 @@ public class TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + iban));
 
         if (!account.getOwner().getId().equals(connectedUser.getId())) {
-            throw new BusinessException("You are not allowed to view this account's history");
+            throw new ForbiddenException("You are not allowed to view this account's history");
         }
 
         return transactionRepository.findBySenderOrReceiver(account, account)
@@ -52,7 +53,7 @@ public class TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Receiver account not found: " + request.getReceiverIban()));
 
         if (!sender.getOwner().getId().equals(connectedUser.getId())) {
-            throw new BusinessException("You are not allowed to transfer from this account");
+            throw new ForbiddenException("You are not allowed to transfer from this account");
         }
 
         if (sender.getBalance() < request.getAmount()) {

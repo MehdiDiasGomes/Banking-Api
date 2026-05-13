@@ -2,6 +2,7 @@ package com.mehdi.banking_api.service;
 
 import com.mehdi.banking_api.dto.request.CreateAccountRequest;
 import com.mehdi.banking_api.dto.response.AccountResponse;
+import com.mehdi.banking_api.exception.ForbiddenException;
 import com.mehdi.banking_api.model.Account;
 import com.mehdi.banking_api.model.User;
 import com.mehdi.banking_api.repository.AccountRepository;
@@ -44,5 +45,19 @@ public class AccountService {
     public Account findEntityById(UUID id) {
         return accountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + id));
+    }
+
+    public AccountResponse deposit(String iban, Double amount, User connectedUser) {
+        Account account = accountRepository.findByIban(iban)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + iban));
+
+        if (!account.getOwner().getId().equals(connectedUser.getId())) {
+            throw new ForbiddenException();
+        }
+
+        account.setBalance(account.getBalance() + amount);
+        Account saved = accountRepository.save(account);
+
+        return new AccountResponse(saved.getId(), saved.getIban(), saved.getBalance(), saved.getType());
     }
 }

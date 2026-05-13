@@ -3,6 +3,7 @@ package com.mehdi.banking_api.service;
 import com.mehdi.banking_api.dto.request.TransferRequest;
 import com.mehdi.banking_api.dto.response.TransactionResponse;
 import com.mehdi.banking_api.exception.BusinessException;
+import com.mehdi.banking_api.exception.ForbiddenException;
 import com.mehdi.banking_api.exception.ResourceNotFoundException;
 import com.mehdi.banking_api.model.*;
 import com.mehdi.banking_api.repository.AccountRepository;
@@ -98,7 +99,7 @@ class TransactionServiceTest {
         when(accountRepository.findByIban("LU111")).thenReturn(Optional.of(account));
 
         assertThatThrownBy(() -> transactionService.getHistory("LU111", attacker))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
@@ -150,7 +151,7 @@ class TransactionServiceTest {
         when(accountRepository.findByIban("LU222")).thenReturn(Optional.of(receiver));
 
         assertThatThrownBy(() -> transactionService.transfer(user, request))
-                .isInstanceOf(BusinessException.class)
+                .isInstanceOf(ForbiddenException.class)
                 .hasMessageContaining("transfer");
     }
 

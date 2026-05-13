@@ -28,6 +28,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiResult<Void>> handleForbidden(ForbiddenException ex) {
+        return ResponseEntity.status(403).body(
+                new ApiResult<>(false, 403, ex.getMessage(), null, LocalDateTime.now())
+        );
+    }
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResult<Void>> handleApi(ApiException ex) {
         return ResponseEntity.status(ex.getStatus()).body(

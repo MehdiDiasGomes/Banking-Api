@@ -112,7 +112,7 @@ class TransactionControllerIntegrationTest {
         mockMvc.perform(get("/transactions/history")
                         .cookie(aliceCookie)
                         .param("iban", bobIban))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("You are not allowed to view this account's history"));
     }
 
@@ -148,7 +148,7 @@ class TransactionControllerIntegrationTest {
                         .cookie(aliceCookie)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("You are not allowed to transfer from this account"));
     }
 
