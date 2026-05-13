@@ -60,20 +60,27 @@ public class TransactionService {
             throw new BusinessException("Insufficient balance");
         }
 
-        sender.setBalance(sender.getBalance() - request.getAmount());
-
-        receiver.setBalance(receiver.getBalance() + request.getAmount());
-
-        accountRepository.save(sender);
-        accountRepository.save(receiver);
-
         Transaction transaction = Transaction.builder()
                 .amount(request.getAmount())
                 .sender(sender)
                 .receiver(receiver)
-                .status(TransactionStatus.COMPLETED)
+                .status(TransactionStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
+
+        transactionRepository.save(transaction);
+
+        try {
+            sender.setBalance(sender.getBalance() - request.getAmount());
+            receiver.setBalance(receiver.getBalance() + request.getAmount());
+            accountRepository.save(sender);
+            accountRepository.save(receiver);
+            transaction.setStatus(TransactionStatus.COMPLETED);
+        } catch (Exception e) {
+            transaction.setStatus(TransactionStatus.FAILED);
+            transactionRepository.save(transaction);
+            throw e;
+        }
 
         Transaction saved = transactionRepository.save(transaction);
 
