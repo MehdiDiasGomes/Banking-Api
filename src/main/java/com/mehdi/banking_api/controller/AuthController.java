@@ -2,7 +2,6 @@ package com.mehdi.banking_api.controller;
 
 import com.mehdi.banking_api.dto.request.LoginRequest;
 import com.mehdi.banking_api.dto.request.RegisterRequest;
-import com.mehdi.banking_api.dto.response.AuthResponse;
 import com.mehdi.banking_api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -49,10 +48,25 @@ public class AuthController {
         return ResponseEntity.status(201).build();
     }
 
+    @Operation(summary = "Logout", description = "Clears the JWT cookie.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Logged out")
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("jwt", "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+        return ResponseEntity.ok().build();
+    }
+
     private void addJwtCookie(HttpServletResponse response, String token) {
         Cookie cookie = new Cookie("jwt", token);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);
+        cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setMaxAge(86400);
         response.addCookie(cookie);
