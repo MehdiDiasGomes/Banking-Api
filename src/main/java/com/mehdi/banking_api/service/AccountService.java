@@ -43,6 +43,6 @@ public class AccountService {
 
     public Account findEntityById(UUID id) {
         return accountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Compte non trouvé : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + id));
     }
 }

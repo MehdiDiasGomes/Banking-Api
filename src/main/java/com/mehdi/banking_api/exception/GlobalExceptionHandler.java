@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResult<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
         return ResponseEntity.status(409).body(
-                new ApiResult<>(false, 409, "Une ressource avec ces données existe déjà", null, LocalDateTime.now())
+                new ApiResult<>(false, 409, "A resource with this data already exists", null, LocalDateTime.now())
         );
     }
 
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
         return ResponseEntity.status(400).body(
-                new ApiResult<>(false, 400, "Données invalides", errors, LocalDateTime.now())
+                new ApiResult<>(false, 400, "Invalid data", errors, LocalDateTime.now())
         );
     }
 }

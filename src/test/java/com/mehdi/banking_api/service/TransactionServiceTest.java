@@ -151,7 +151,7 @@ class TransactionServiceTest {
 
         assertThatThrownBy(() -> transactionService.transfer(user, request))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("virement");
+                .hasMessageContaining("transfer");
     }
 
     @Test
@@ -170,7 +170,7 @@ class TransactionServiceTest {
 
         assertThatThrownBy(() -> transactionService.transfer(user, request))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("Solde insuffisant");
+                .hasMessage("Insufficient balance");
     }
 
     @Test

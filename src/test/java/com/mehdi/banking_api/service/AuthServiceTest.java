@@ -82,7 +82,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("Mot de passe incorrect");
+                .hasMessage("Incorrect password");
     }
 
     @Test

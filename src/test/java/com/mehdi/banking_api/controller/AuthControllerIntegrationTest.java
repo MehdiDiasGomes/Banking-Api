@@ -97,7 +97,7 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Mot de passe incorrect"));
+                .andExpect(jsonPath("$.message").value("Incorrect password"));
     }
 
     @Test

@@ -21,10 +21,10 @@ public class AuthService {
 
     public String login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!encoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BusinessException("Mot de passe incorrect");
+            throw new BusinessException("Incorrect password");
         }
 
         return jwtService.generateToken(user.getEmail());

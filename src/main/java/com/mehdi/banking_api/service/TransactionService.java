@@ -25,10 +25,10 @@ public class TransactionService {
 
     public List<TransactionResponse> getHistory(String iban, User connectedUser) {
         Account account = accountRepository.findByIban(iban)
-                .orElseThrow(() -> new ResourceNotFoundException("Compte non trouvé : " + iban));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + iban));
 
         if (!account.getOwner().getId().equals(connectedUser.getId())) {
-            throw new BusinessException("Vous ne pouvez pas consulter l'historique de ce compte");
+            throw new BusinessException("You are not allowed to view this account's history");
         }
 
         return transactionRepository.findBySenderOrReceiver(account, account)
@@ -47,16 +47,16 @@ public class TransactionService {
     @Transactional
     public TransactionResponse transfer(User connectedUser, TransferRequest request) {
         Account sender = accountRepository.findByIban(request.getSenderIban())
-                .orElseThrow(() -> new ResourceNotFoundException("Compte expéditeur non trouvé : " + request.getSenderIban()));
+                .orElseThrow(() -> new ResourceNotFoundException("Sender account not found: " + request.getSenderIban()));
         Account receiver = accountRepository.findByIban(request.getReceiverIban())
-                .orElseThrow(() -> new ResourceNotFoundException("Compte destinataire non trouvé : " + request.getReceiverIban()));
+                .orElseThrow(() -> new ResourceNotFoundException("Receiver account not found: " + request.getReceiverIban()));
 
         if (!sender.getOwner().getId().equals(connectedUser.getId())) {
-            throw new BusinessException("Vous ne pouvez pas effectuer un virement depuis ce compte");
+            throw new BusinessException("You are not allowed to transfer from this account");
         }
 
         if (sender.getBalance() < request.getAmount()) {
-            throw new BusinessException("Solde insuffisant");
+            throw new BusinessException("Insufficient balance");
         }
 
         sender.setBalance(sender.getBalance() - request.getAmount());

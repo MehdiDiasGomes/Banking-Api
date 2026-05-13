@@ -113,7 +113,7 @@ class TransactionControllerIntegrationTest {
                         .cookie(aliceCookie)
                         .param("iban", bobIban))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Vous ne pouvez pas consulter l'historique de ce compte"));
+                .andExpect(jsonPath("$.message").value("You are not allowed to view this account's history"));
     }
 
     @Test
@@ -149,7 +149,7 @@ class TransactionControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Vous ne pouvez pas effectuer un virement depuis ce compte"));
+                .andExpect(jsonPath("$.message").value("You are not allowed to transfer from this account"));
     }
 
     @Test
@@ -164,7 +164,7 @@ class TransactionControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Solde insuffisant"));
+                .andExpect(jsonPath("$.message").value("Insufficient balance"));
     }
 
     @Test
