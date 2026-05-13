@@ -1,0 +1,48 @@
+package com.mehdi.banking_api.service;
+
+import com.mehdi.banking_api.dto.request.CreateAccountRequest;
+import com.mehdi.banking_api.dto.response.AccountResponse;
+import com.mehdi.banking_api.model.Account;
+import com.mehdi.banking_api.model.User;
+import com.mehdi.banking_api.repository.AccountRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import com.mehdi.banking_api.exception.ResourceNotFoundException;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+    private final AccountRepository accountRepository;
+
+    private String generateIban() {
+        return "LU" + System.currentTimeMillis();
+    }
+
+    public AccountResponse save(User user, CreateAccountRequest request) {
+        Account account = Account.builder()
+                .iban(generateIban())
+                .balance(0.0)
+                .type(request.getAccountType())
+                .owner(user)
+                .build();
+
+        Account saved = accountRepository.save(account);
+
+        return new AccountResponse(saved.getId(), saved.getIban(), saved.getBalance(), saved.getType());
+    }
+
+    public List<AccountResponse> findAllByUser(User owner) {
+        return accountRepository.findByOwnerId(owner.getId())
+                .stream()
+                .map(a -> new AccountResponse(a.getId(), a.getIban(), a.getBalance(), a.getType()))
+                .toList();
+    }
+
+    public Account findEntityById(UUID id) {
+        return accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Compte non trouvé : " + id));
+    }
+}
