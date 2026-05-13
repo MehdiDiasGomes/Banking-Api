@@ -79,6 +79,14 @@ class TransactionControllerIntegrationTest {
         return new Cookie("jwt", response.getCookie("jwt").getValue());
     }
 
+    private void depositFunds(String iban, Cookie cookie, double amount) throws Exception {
+        mockMvc.perform(post("/api/accounts/" + iban + "/deposit")
+                        .cookie(cookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":" + amount + "}"))
+                .andExpect(status().isOk());
+    }
+
     private String createAccountAndGetIban(Cookie cookie) throws Exception {
         CreateAccountRequest req = new CreateAccountRequest();
         req.setAccountType(AccountType.SAVINGS);
@@ -169,10 +177,12 @@ class TransactionControllerIntegrationTest {
 
     @Test
     void transfer_withValidRequest_returns200AndAppearsInHistory() throws Exception {
+        depositFunds(aliceIban, aliceCookie, 100.0);
+
         TransferRequest req = new TransferRequest();
         req.setSenderIban(aliceIban);
         req.setReceiverIban(bobIban);
-        req.setAmount(0.0);
+        req.setAmount(50.0);
 
         mockMvc.perform(post("/transactions/transfer")
                         .cookie(aliceCookie)
