@@ -21,11 +21,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TransactionService {
     private final TransactionRepository transactionRepository;
-    private final AccountService accountService;
     private final AccountRepository accountRepository;
 
-    public List<TransactionResponse> getHistory(User user) {
-        Account account = accountService.findEntityById(user.getId());
+    public List<TransactionResponse> getHistory(String iban, User connectedUser) {
+        Account account = accountRepository.findByIban(iban)
+                .orElseThrow(() -> new ResourceNotFoundException("Compte non trouvé : " + iban));
+
+        if (!account.getOwner().getId().equals(connectedUser.getId())) {
+            throw new BusinessException("Vous ne pouvez pas consulter l'historique de ce compte");
+        }
+
         return transactionRepository.findBySenderOrReceiver(account, account)
                 .stream()
                 .map(t -> new TransactionResponse(

@@ -1,6 +1,5 @@
 package com.mehdi.banking_api.controller;
 
-
 import com.mehdi.banking_api.common.ApiResponse;
 import com.mehdi.banking_api.dto.request.TransferRequest;
 import com.mehdi.banking_api.dto.response.TransactionResponse;
@@ -20,9 +19,9 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @GetMapping("/history")
-    public ResponseEntity<ApiResponse<List<TransactionResponse>>> getHistory() {
+    public ResponseEntity<ApiResponse<List<TransactionResponse>>> getHistory(@RequestParam String iban) {
         return ResponseEntity.ok(ApiResponse.success(
-                transactionService.getHistory(getAuthenticatedUser())
+                transactionService.getHistory(iban, getAuthenticatedUser())
         ));
     }
 
