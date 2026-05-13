@@ -1,6 +1,6 @@
 package com.mehdi.banking_api.exception;
 
-import com.mehdi.banking_api.common.ApiResponse;
+import com.mehdi.banking_api.common.ApiResult;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,34 +14,34 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNotFound(ResourceNotFoundException ex) {
+    public ResponseEntity<ApiResult<Void>> handleNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(404).body(
-                new ApiResponse<>(false, 404, ex.getMessage(), null, LocalDateTime.now())
+                new ApiResult<>(false, 404, ex.getMessage(), null, LocalDateTime.now())
         );
     }
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException ex) {
+    public ResponseEntity<ApiResult<Void>> handleBusiness(BusinessException ex) {
         return ResponseEntity.status(400).body(
-                new ApiResponse<>(false, 400, ex.getMessage(), null, LocalDateTime.now())
+                new ApiResult<>(false, 400, ex.getMessage(), null, LocalDateTime.now())
         );
     }
 
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ApiResponse<Void>> handleApi(ApiException ex) {
+    public ResponseEntity<ApiResult<Void>> handleApi(ApiException ex) {
         return ResponseEntity.status(ex.getStatus()).body(
-                new ApiResponse<>(false, ex.getStatus(), ex.getMessage(), null, LocalDateTime.now())
+                new ApiResult<>(false, ex.getStatus(), ex.getMessage(), null, LocalDateTime.now())
         );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResult<Map<String, String>>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult()
                 .getFieldErrors()
                 .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
         return ResponseEntity.status(400).body(
-                new ApiResponse<>(false, 400, "Données invalides", errors, LocalDateTime.now())
+                new ApiResult<>(false, 400, "Données invalides", errors, LocalDateTime.now())
         );
     }
 }
