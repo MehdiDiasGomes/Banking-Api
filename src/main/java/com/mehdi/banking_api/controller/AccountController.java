@@ -19,17 +19,17 @@ public class AccountController {
 
     @GetMapping
     public List<AccountResponse> getAll() {
-        User user = (User) SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
-        return accountService.findAllByUser(user);
+        return accountService.findAllByUser(getAuthenticatedUser());
     }
 
     @PostMapping
     public ResponseEntity<AccountResponse> create(@RequestBody CreateAccountRequest request) {
-        User user = (User) SecurityContextHolder.getContext()
+        return ResponseEntity.status(201).body(accountService.save(getAuthenticatedUser(), request));
+    }
+
+    private User getAuthenticatedUser() {
+        return (User) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getPrincipal();
-        return ResponseEntity.status(201).body(accountService.save(user, request));
     }
 }

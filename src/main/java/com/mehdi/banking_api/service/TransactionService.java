@@ -40,13 +40,13 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransactionResponse transfer(User user, TransferRequest request) {
+    public TransactionResponse transfer(User connectedUser, TransferRequest request) {
         Account sender = accountRepository.findByIban(request.getSenderIban())
                 .orElseThrow(() -> new ResourceNotFoundException("Compte expéditeur non trouvé : " + request.getSenderIban()));
         Account receiver = accountRepository.findByIban(request.getReceiverIban())
                 .orElseThrow(() -> new ResourceNotFoundException("Compte destinataire non trouvé : " + request.getReceiverIban()));
 
-        if (!sender.getOwner().getId().equals(user.getId())) {
+        if (!sender.getOwner().getId().equals(connectedUser.getId())) {
             throw new BusinessException("Vous ne pouvez pas effectuer un virement depuis ce compte");
         }
 
