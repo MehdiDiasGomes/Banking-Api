@@ -101,6 +101,17 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
+    void logout_withAuth_returns200AndClearsJwtCookie() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(buildRegisterRequest("logout@test.com"))));
+
+        mockMvc.perform(post("/api/auth/logout"))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("jwt", 0));
+    }
+
+    @Test
     void login_withUnknownEmail_returns404() throws Exception {
         LoginRequest login = new LoginRequest();
         login.setEmail("nobody@test.com");
