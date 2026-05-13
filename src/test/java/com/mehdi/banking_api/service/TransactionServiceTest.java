@@ -56,8 +56,6 @@ class TransactionServiceTest {
                 .build();
     }
 
-    // --- getHistory ---
-
     @Test
     void getHistory_withOwnAccount_returnsTransactions() {
         User user = buildUser("user@test.com");
@@ -102,8 +100,6 @@ class TransactionServiceTest {
         assertThatThrownBy(() -> transactionService.getHistory("LU111", attacker))
                 .isInstanceOf(BusinessException.class);
     }
-
-    // --- transfer ---
 
     @Test
     void transfer_withValidRequest_completesAndReturnsResponse() {

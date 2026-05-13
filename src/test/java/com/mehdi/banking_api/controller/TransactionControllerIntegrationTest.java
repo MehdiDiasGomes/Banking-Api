@@ -92,8 +92,6 @@ class TransactionControllerIntegrationTest {
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("iban").asText();
     }
 
-    // --- GET /transactions/history ---
-
     @Test
     void getHistory_withoutAuth_returns403() throws Exception {
         mockMvc.perform(get("/transactions/history").param("iban", aliceIban))
@@ -125,8 +123,6 @@ class TransactionControllerIntegrationTest {
                         .param("iban", "LU_UNKNOWN"))
                 .andExpect(status().isNotFound());
     }
-
-    // --- POST /transactions/transfer ---
 
     @Test
     void transfer_withoutAuth_returns403() throws Exception {
