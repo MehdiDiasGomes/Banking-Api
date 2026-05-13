@@ -12,6 +12,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +31,7 @@ public class AuthController {
         @ApiResponse(responseCode = "400", description = "Invalid credentials")
     })
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<Void> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response) {
         String token = authService.login(request);
         addJwtCookie(response, token);
         return ResponseEntity.ok().build();
@@ -42,7 +43,7 @@ public class AuthController {
         @ApiResponse(responseCode = "500", description = "Email already in use")
     })
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@RequestBody RegisterRequest request, HttpServletResponse response) {
+    public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequest request, HttpServletResponse response) {
         String token = authService.register(request);
         addJwtCookie(response, token);
         return ResponseEntity.status(201).build();

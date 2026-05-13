@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -48,7 +49,7 @@ public class TransactionController {
         @ApiResponse(responseCode = "404", description = "Sender or receiver IBAN not found")
     })
     @PostMapping("/transfer")
-    public ResponseEntity<ApiResult<TransactionResponse>> transfer(@RequestBody TransferRequest request) {
+    public ResponseEntity<ApiResult<TransactionResponse>> transfer(@RequestBody @Valid TransferRequest request) {
         return ResponseEntity.ok(ApiResult.success(
                 transactionService.transfer(getAuthenticatedUser(), request)
         ));

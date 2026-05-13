@@ -1,6 +1,7 @@
 package com.mehdi.banking_api.controller;
 
 import com.mehdi.banking_api.dto.request.CreateAccountRequest;
+import com.mehdi.banking_api.dto.request.DepositRequest;
 import com.mehdi.banking_api.dto.response.AccountResponse;
 import com.mehdi.banking_api.model.User;
 import com.mehdi.banking_api.service.AccountService;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,8 +42,21 @@ public class AccountController {
         @ApiResponse(responseCode = "403", description = "Not authenticated")
     })
     @PostMapping
-    public ResponseEntity<AccountResponse> create(@RequestBody CreateAccountRequest request) {
+    public ResponseEntity<AccountResponse> create(@RequestBody @Valid CreateAccountRequest request) {
         return ResponseEntity.status(201).body(accountService.save(getAuthenticatedUser(), request));
+    }
+
+    @Operation(summary = "Deposit funds", description = "Deposits an amount into the specified account owned by the authenticated user.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Deposit successful"),
+        @ApiResponse(responseCode = "403", description = "Account does not belong to authenticated user"),
+        @ApiResponse(responseCode = "404", description = "Account not found")
+    })
+    @PostMapping("/{iban}/deposit")
+    public ResponseEntity<AccountResponse> deposit(
+            @PathVariable String iban,
+            @RequestBody @Valid DepositRequest request) {
+        return ResponseEntity.ok(accountService.deposit(iban, request.getAmount(), getAuthenticatedUser()));
     }
 
     private User getAuthenticatedUser() {
