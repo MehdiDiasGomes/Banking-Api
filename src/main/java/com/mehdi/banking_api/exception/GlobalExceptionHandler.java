@@ -1,6 +1,7 @@
 package com.mehdi.banking_api.exception;
 
 import com.mehdi.banking_api.common.ApiResult;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -31,6 +32,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResult<Void>> handleApi(ApiException ex) {
         return ResponseEntity.status(ex.getStatus()).body(
                 new ApiResult<>(false, ex.getStatus(), ex.getMessage(), null, LocalDateTime.now())
+        );
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResult<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(409).body(
+                new ApiResult<>(false, 409, "Une ressource avec ces données existe déjà", null, LocalDateTime.now())
         );
     }
 
