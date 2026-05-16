@@ -1,0 +1,399 @@
+openapi: 3.1.0
+info:
+  title: Banking API
+  description: "REST API for banking operations — accounts, transfers, and transaction\
+    \ history."
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+security:
+- jwt-cookie: []
+tags:
+- name: Transactions
+  description: Transfer funds and consult transaction history
+- name: Users
+  description: Retrieve authenticated user information
+- name: Accounts
+  description: Manage bank accounts for the authenticated user
+- name: Authentication
+  description: Register and login — JWT delivered as HttpOnly cookie
+paths:
+  /transactions/transfer:
+    post:
+      tags:
+      - Transactions
+      summary: Transfer funds
+      description: Transfer an amount between two accounts by IBAN. The sender account
+        must belong to the authenticated user.
+      operationId: transfer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+        required: true
+      responses:
+        "200":
+          description: Transfer completed
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResultTransactionResponse"
+        "400":
+          description: Insufficient balance or unauthorized sender
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResultTransactionResponse"
+        "404":
+          description: Sender or receiver IBAN not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResultTransactionResponse"
+      security:
+      - jwt-cookie: []
+  /api/auth/register:
+    post:
+      tags:
+      - Authentication
+      summary: Register
+      description: Create a new account. Sets a JWT cookie on success.
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "201":
+          description: User created
+        "500":
+          description: Email already in use
+  /api/auth/logout:
+    post:
+      tags:
+      - Authentication
+      summary: Logout
+      description: Clears the JWT cookie.
+      operationId: logout
+      responses:
+        "200":
+          description: Logged out
+  /api/auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: Login
+      description: Authenticate with email and password. Sets a JWT cookie on success.
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: Authenticated
+        "400":
+          description: Invalid credentials
+  /api/accounts:
+    get:
+      tags:
+      - Accounts
+      summary: List accounts
+      description: Returns all accounts belonging to the authenticated user.
+      operationId: getAll
+      responses:
+        "200":
+          description: List returned
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountResponse"
+        "403":
+          description: Not authenticated
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccountResponse"
+      security:
+      - jwt-cookie: []
+    post:
+      tags:
+      - Accounts
+      summary: Create account
+      description: Creates a new bank account for the authenticated user.
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountRequest"
+        required: true
+      responses:
+        "201":
+          description: Account created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "403":
+          description: Not authenticated
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+      security:
+      - jwt-cookie: []
+  /api/accounts/{iban}/deposit:
+    post:
+      tags:
+      - Accounts
+      summary: Deposit funds
+      description: Deposits an amount into the specified account owned by the authenticated
+        user.
+      operationId: deposit
+      parameters:
+      - name: iban
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepositRequest"
+        required: true
+      responses:
+        "200":
+          description: Deposit successful
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "403":
+          description: Account does not belong to authenticated user
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+        "404":
+          description: Account not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+      security:
+      - jwt-cookie: []
+  /transactions/history:
+    get:
+      tags:
+      - Transactions
+      summary: Transaction history
+      description: Returns all transactions for the given IBAN. The account must belong
+        to the authenticated user.
+      operationId: getHistory
+      parameters:
+      - name: iban
+        in: query
+        description: IBAN of the account
+        required: true
+        schema:
+          type: string
+        example: LU1778664822152
+      responses:
+        "200":
+          description: History returned
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResultListTransactionResponse"
+        "400":
+          description: Account does not belong to you
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResultListTransactionResponse"
+        "404":
+          description: IBAN not found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResultListTransactionResponse"
+      security:
+      - jwt-cookie: []
+  /api/users/me:
+    get:
+      tags:
+      - Users
+      summary: Get current user
+      description: Returns the profile of the authenticated user.
+      operationId: me
+      responses:
+        "200":
+          description: User profile returned
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "403":
+          description: Not authenticated
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+      security:
+      - jwt-cookie: []
+components:
+  schemas:
+    TransferRequest:
+      type: object
+      properties:
+        senderIban:
+          type: string
+          minLength: 1
+        receiverIban:
+          type: string
+          minLength: 1
+        amount:
+          type: number
+      required:
+      - amount
+    ApiResultTransactionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/TransactionResponse"
+        timestamp:
+          type: string
+          format: date-time
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        senderIban:
+          type: string
+        receiverIban:
+          type: string
+        status:
+          type: string
+          enum:
+          - PENDING
+          - COMPLETED
+          - FAILED
+        createdAt:
+          type: string
+          format: date-time
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          maxLength: 2147483647
+          minLength: 8
+        firstName:
+          type: string
+          minLength: 1
+        lastName:
+          type: string
+          minLength: 1
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          maxLength: 2147483647
+          minLength: 8
+    CreateAccountRequest:
+      type: object
+      properties:
+        accountType:
+          type: string
+          enum:
+          - CHECKING
+          - SAVINGS
+      required:
+      - accountType
+    AccountResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        iban:
+          type: string
+        balance:
+          type: number
+        type:
+          type: string
+          enum:
+          - CHECKING
+          - SAVINGS
+    DepositRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+      required:
+      - amount
+    ApiResultListTransactionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionResponse"
+        timestamp:
+          type: string
+          format: date-time
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+  securitySchemes:
+    jwt-cookie:
+      type: apiKey
+      description: JWT token delivered as an HttpOnly cookie after login or register.
+      name: jwt
+      in: cookie
