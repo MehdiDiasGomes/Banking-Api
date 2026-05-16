@@ -57,7 +57,7 @@ public class TransactionService {
             throw new ForbiddenException("You are not allowed to transfer from this account");
         }
 
-        if (sender.getBalance() < request.getAmount()) {
+        if (sender.getBalance().compareTo(request.getAmount()) < 0) {
             throw new BusinessException("Insufficient balance");
         }
 
@@ -72,8 +72,8 @@ public class TransactionService {
         transactionAuditService.createPending(transaction);
 
         try {
-            sender.setBalance(sender.getBalance() - request.getAmount());
-            receiver.setBalance(receiver.getBalance() + request.getAmount());
+            sender.setBalance(sender.getBalance().subtract(request.getAmount()));
+            receiver.setBalance(receiver.getBalance().add(request.getAmount()));
             accountRepository.save(sender);
             accountRepository.save(receiver);
             transaction.setStatus(TransactionStatus.COMPLETED);

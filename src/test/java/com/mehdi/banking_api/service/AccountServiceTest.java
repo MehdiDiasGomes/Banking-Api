@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,7 +52,7 @@ class AccountServiceTest {
         Account saved = Account.builder()
                 .id(UUID.randomUUID())
                 .iban("LU123456789")
-                .balance(0.0)
+                .balance(BigDecimal.ZERO)
                 .type(AccountType.SAVINGS)
                 .owner(user)
                 .build();
@@ -61,7 +62,7 @@ class AccountServiceTest {
         AccountResponse response = accountService.save(user, request);
 
         assertThat(response.getIban()).isEqualTo("LU123456789");
-        assertThat(response.getBalance()).isEqualTo(0.0);
+        assertThat(response.getBalance()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.getType()).isEqualTo(AccountType.SAVINGS);
 
         ArgumentCaptor<Account> captor = ArgumentCaptor.forClass(Account.class);
@@ -76,7 +77,7 @@ class AccountServiceTest {
         Account account = Account.builder()
                 .id(UUID.randomUUID())
                 .iban("LU111")
-                .balance(100.0)
+                .balance(new BigDecimal("100.0"))
                 .type(AccountType.CHECKING)
                 .owner(user)
                 .build();

@@ -3,6 +3,7 @@ package com.mehdi.banking_api.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
@@ -19,8 +20,8 @@ public class Account {
     @Column(unique = true, nullable = false)
     private String iban;
 
-    @Column(nullable = false)
-    private Double balance;
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal balance;
 
     @Enumerated(EnumType.STRING)
     private AccountType type;

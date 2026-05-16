@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +48,7 @@ class TransactionServiceTest {
                 .build();
     }
 
-    private Account buildAccount(String iban, double balance, User owner) {
+    private Account buildAccount(String iban, BigDecimal balance, User owner) {
         return Account.builder()
                 .id(UUID.randomUUID())
                 .iban(iban)
@@ -60,11 +61,11 @@ class TransactionServiceTest {
     @Test
     void getHistory_withOwnAccount_returnsTransactions() {
         User user = buildUser("user@test.com");
-        Account account = buildAccount("LU111", 500.0, user);
+        Account account = buildAccount("LU111", new BigDecimal("500.0"), user);
 
         Transaction tx = Transaction.builder()
                 .id(UUID.randomUUID())
-                .amount(100.0)
+                .amount(new BigDecimal("100.0"))
                 .sender(account)
                 .receiver(account)
                 .status(TransactionStatus.COMPLETED)
@@ -94,7 +95,7 @@ class TransactionServiceTest {
     void getHistory_withForeignAccount_throwsBusinessException() {
         User owner = buildUser("owner@test.com");
         User attacker = buildUser("attacker@test.com");
-        Account account = buildAccount("LU111", 500.0, owner);
+        Account account = buildAccount("LU111", new BigDecimal("500.0"), owner);
 
         when(accountRepository.findByIban("LU111")).thenReturn(Optional.of(account));
 
@@ -105,17 +106,17 @@ class TransactionServiceTest {
     @Test
     void transfer_withValidRequest_completesAndReturnsResponse() {
         User user = buildUser("user@test.com");
-        Account sender = buildAccount("LU111", 500.0, user);
-        Account receiver = buildAccount("LU222", 100.0, buildUser("other@test.com"));
+        Account sender = buildAccount("LU111", new BigDecimal("500.0"), user);
+        Account receiver = buildAccount("LU222", new BigDecimal("100.0"), buildUser("other@test.com"));
 
         TransferRequest request = new TransferRequest();
         request.setSenderIban("LU111");
         request.setReceiverIban("LU222");
-        request.setAmount(200.0);
+        request.setAmount(new BigDecimal("200.0"));
 
         Transaction saved = Transaction.builder()
                 .id(UUID.randomUUID())
-                .amount(200.0)
+                .amount(new BigDecimal("200.0"))
                 .sender(sender)
                 .receiver(receiver)
                 .status(TransactionStatus.COMPLETED)
@@ -130,9 +131,9 @@ class TransactionServiceTest {
         TransactionResponse response = transactionService.transfer(user, request);
 
         assertThat(response.getStatus()).isEqualTo(TransactionStatus.COMPLETED);
-        assertThat(response.getAmount()).isEqualTo(200.0);
-        assertThat(sender.getBalance()).isEqualTo(300.0);
-        assertThat(receiver.getBalance()).isEqualTo(300.0);
+        assertThat(response.getAmount()).isEqualByComparingTo(new BigDecimal("200.0"));
+        assertThat(sender.getBalance()).isEqualByComparingTo(new BigDecimal("300.0"));
+        assertThat(receiver.getBalance()).isEqualByComparingTo(new BigDecimal("300.0"));
         verify(accountRepository, times(2)).save(any(Account.class));
     }
 
@@ -140,13 +141,13 @@ class TransactionServiceTest {
     void transfer_withUnauthorizedSender_throwsBusinessException() {
         User user = buildUser("user@test.com");
         User realOwner = buildUser("owner@test.com");
-        Account sender = buildAccount("LU111", 500.0, realOwner);
-        Account receiver = buildAccount("LU222", 100.0, user);
+        Account sender = buildAccount("LU111", new BigDecimal("500.0"), realOwner);
+        Account receiver = buildAccount("LU222", new BigDecimal("100.0"), user);
 
         TransferRequest request = new TransferRequest();
         request.setSenderIban("LU111");
         request.setReceiverIban("LU222");
-        request.setAmount(100.0);
+        request.setAmount(new BigDecimal("100.0"));
 
         when(accountRepository.findByIban("LU111")).thenReturn(Optional.of(sender));
         when(accountRepository.findByIban("LU222")).thenReturn(Optional.of(receiver));
@@ -159,13 +160,13 @@ class TransactionServiceTest {
     @Test
     void transfer_withInsufficientBalance_throwsBusinessException() {
         User user = buildUser("user@test.com");
-        Account sender = buildAccount("LU111", 50.0, user);
-        Account receiver = buildAccount("LU222", 0.0, buildUser("other@test.com"));
+        Account sender = buildAccount("LU111", new BigDecimal("50.0"), user);
+        Account receiver = buildAccount("LU222", BigDecimal.ZERO, buildUser("other@test.com"));
 
         TransferRequest request = new TransferRequest();
         request.setSenderIban("LU111");
         request.setReceiverIban("LU222");
-        request.setAmount(200.0);
+        request.setAmount(new BigDecimal("200.0"));
 
         when(accountRepository.findByIban("LU111")).thenReturn(Optional.of(sender));
         when(accountRepository.findByIban("LU222")).thenReturn(Optional.of(receiver));
@@ -181,7 +182,7 @@ class TransactionServiceTest {
         TransferRequest request = new TransferRequest();
         request.setSenderIban("LU_UNKNOWN");
         request.setReceiverIban("LU222");
-        request.setAmount(100.0);
+        request.setAmount(new BigDecimal("100.0"));
 
         when(accountRepository.findByIban("LU_UNKNOWN")).thenReturn(Optional.empty());
 

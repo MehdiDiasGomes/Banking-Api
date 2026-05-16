@@ -4,6 +4,7 @@ import com.mehdi.banking_api.model.AccountType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
@@ -11,6 +12,6 @@ import java.util.UUID;
 public class AccountResponse {
     private UUID id;
     private String iban;
-    private Double balance;
+    private BigDecimal balance;
     private AccountType type;
 }

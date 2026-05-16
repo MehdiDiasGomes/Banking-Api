@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class TransferRequest {
     @NotBlank
@@ -15,5 +17,5 @@ public class TransferRequest {
 
     @NotNull
     @Positive
-    private Double amount;
+    private BigDecimal amount;
 }

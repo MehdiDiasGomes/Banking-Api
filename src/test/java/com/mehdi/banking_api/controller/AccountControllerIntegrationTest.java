@@ -112,7 +112,7 @@ class AccountControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.iban").isString())
-                .andExpect(jsonPath("$.balance").value(0.0))
+                .andExpect(jsonPath("$.balance").value(0))
                 .andExpect(jsonPath("$.type").value("SAVINGS"));
     }
 

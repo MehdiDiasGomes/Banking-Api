@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.mehdi.banking_api.exception.ResourceNotFoundException;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +26,7 @@ public class AccountService {
     public AccountResponse save(User user, CreateAccountRequest request) {
         Account account = Account.builder()
                 .iban(generateIban())
-                .balance(0.0)
+                .balance(BigDecimal.ZERO)
                 .type(request.getAccountType())
                 .owner(user)
                 .build();
@@ -47,7 +48,7 @@ public class AccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + id));
     }
 
-    public AccountResponse deposit(String iban, Double amount, User connectedUser) {
+    public AccountResponse deposit(String iban, BigDecimal amount, User connectedUser) {
         Account account = accountRepository.findByIban(iban)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + iban));
 
@@ -55,7 +56,7 @@ public class AccountService {
             throw new ForbiddenException();
         }
 
-        account.setBalance(account.getBalance() + amount);
+        account.setBalance(account.getBalance().add(amount));
         Account saved = accountRepository.save(account);
 
         return new AccountResponse(saved.getId(), saved.getIban(), saved.getBalance(), saved.getType());

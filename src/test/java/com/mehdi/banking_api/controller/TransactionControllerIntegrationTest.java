@@ -21,6 +21,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.math.BigDecimal;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -79,11 +81,11 @@ class TransactionControllerIntegrationTest {
         return new Cookie("jwt", response.getCookie("jwt").getValue());
     }
 
-    private void depositFunds(String iban, Cookie cookie, double amount) throws Exception {
+    private void depositFunds(String iban, Cookie cookie, BigDecimal amount) throws Exception {
         mockMvc.perform(post("/api/accounts/" + iban + "/deposit")
                         .cookie(cookie)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"amount\":" + amount + "}"))
+                        .content("{\"amount\":" + amount.toPlainString() + "}"))
                 .andExpect(status().isOk());
     }
 
@@ -137,7 +139,7 @@ class TransactionControllerIntegrationTest {
         TransferRequest req = new TransferRequest();
         req.setSenderIban(aliceIban);
         req.setReceiverIban(bobIban);
-        req.setAmount(10.0);
+        req.setAmount(new BigDecimal("10"));
 
         mockMvc.perform(post("/transactions/transfer")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -150,7 +152,7 @@ class TransactionControllerIntegrationTest {
         TransferRequest req = new TransferRequest();
         req.setSenderIban(bobIban);
         req.setReceiverIban(aliceIban);
-        req.setAmount(10.0);
+        req.setAmount(new BigDecimal("10"));
 
         mockMvc.perform(post("/transactions/transfer")
                         .cookie(aliceCookie)
@@ -165,7 +167,7 @@ class TransactionControllerIntegrationTest {
         TransferRequest req = new TransferRequest();
         req.setSenderIban(aliceIban);
         req.setReceiverIban(bobIban);
-        req.setAmount(9999.0);
+        req.setAmount(new BigDecimal("9999"));
 
         mockMvc.perform(post("/transactions/transfer")
                         .cookie(aliceCookie)
@@ -177,12 +179,12 @@ class TransactionControllerIntegrationTest {
 
     @Test
     void transfer_withValidRequest_returns200AndAppearsInHistory() throws Exception {
-        depositFunds(aliceIban, aliceCookie, 100.0);
+        depositFunds(aliceIban, aliceCookie, new BigDecimal("100"));
 
         TransferRequest req = new TransferRequest();
         req.setSenderIban(aliceIban);
         req.setReceiverIban(bobIban);
-        req.setAmount(50.0);
+        req.setAmount(new BigDecimal("50"));
 
         mockMvc.perform(post("/transactions/transfer")
                         .cookie(aliceCookie)

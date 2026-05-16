@@ -5,6 +5,7 @@ import com.mehdi.banking_api.model.TransactionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -12,7 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class TransactionResponse {
     private UUID id;
-    private Double amount;
+    private BigDecimal amount;
     private String senderIban;
     private String receiverIban;
     private TransactionStatus status;
