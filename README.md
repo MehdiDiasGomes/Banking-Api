@@ -18,6 +18,7 @@ Key design choices:
 - **`@Transactional` transfers with audit trail** — every transfer is recorded as `PENDING` before execution and marked `COMPLETED` or `FAILED`, ensuring full traceability
 - **Ownership enforcement on every operation** — users can only read or mutate their own accounts
 - **Stateless session management** — no server-side session state, horizontally scalable
+- **`BigDecimal` for all monetary amounts** — guarantees exact decimal arithmetic; `Double` is strictly prohibited to avoid IEEE 754 rounding errors (e.g. `0.1 + 0.2 ≠ 0.3`)
 
 ---
 
@@ -76,6 +77,7 @@ src/main/java/com/mehdi/banking_api/
 - List all accounts belonging to the authenticated user
 - Deposit funds into an owned account (by IBAN)
 - IBAN auto-generated on account creation
+- Balance stored as `BigDecimal` with 4 decimal places (`precision=19, scale=4`) — compliant with GAAP/IFRS precision requirements
 
 ### Transactions
 - **Fund transfer** between any two accounts by IBAN
@@ -84,6 +86,7 @@ src/main/java/com/mehdi/banking_api/
 - Transfer wrapped in `@Transactional`: balance update + audit record are atomic
 - **Audit trail**: every transfer is persisted as `PENDING` → `COMPLETED` | `FAILED`
 - **Transaction history** for any owned account, queried by IBAN
+- Transfer amounts stored as `BigDecimal` — balance deduction and credit use `.subtract()` / `.add()`, never floating-point operators
 
 ### Error Handling
 - Centralized `GlobalExceptionHandler` — consistent JSON error responses
