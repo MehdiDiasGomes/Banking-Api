@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.mehdi.banking_api.exception.ResourceNotFoundException;
 
+import org.iban4j.CountryCode;
+import org.iban4j.Iban;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +23,14 @@ public class AccountService {
     private final AccountRepository accountRepository;
 
     private String generateIban() {
-        return "LU" + System.currentTimeMillis();
+        // Account number: last 13 digits of current millis, zero-padded (LU BBAN = 3 bank + 13 account)
+        String accountNumber = String.format("%013d", System.currentTimeMillis() % 10_000_000_000_000L);
+        return new Iban.Builder()
+                .countryCode(CountryCode.LU)
+                .bankCode("001")
+                .accountNumber(accountNumber)
+                .build()
+                .toString();
     }
 
     public AccountResponse save(User user, CreateAccountRequest request) {
