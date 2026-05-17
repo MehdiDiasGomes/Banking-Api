@@ -54,24 +54,20 @@ public class AuthController {
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from("jwt", "")
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(0)
-                .sameSite("None")
-                .domain(".mdiasgomes.com")
-                .build();
-        response.addHeader("Set-Cookie", cookie.toString());
+        setJwtCookie(response, "", 0);
         return ResponseEntity.ok().build();
     }
 
     private void addJwtCookie(HttpServletResponse response, String token) {
-        ResponseCookie cookie = ResponseCookie.from("jwt", token)
+        setJwtCookie(response, token, 86400);
+    }
+
+    private void setJwtCookie(HttpServletResponse response, String value, long maxAge) {
+        ResponseCookie cookie = ResponseCookie.from("jwt", value)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(86400)
+                .maxAge(maxAge)
                 .sameSite("None")
                 .domain(".mdiasgomes.com")
                 .build();
