@@ -11,6 +11,21 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: banking
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,3 +38,7 @@ jobs:
 
       - name: Run tests
         run: ./mvnw test -q
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/banking
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
