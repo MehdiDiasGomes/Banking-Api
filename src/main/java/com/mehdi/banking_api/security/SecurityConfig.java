@@ -27,7 +27,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:4200",
-                "https://banking-frontend-beta.vercel.app"
+                "https://banking-frontend-beta.vercel.app",
+                "https://banking.mdiasgomes.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
