@@ -2,6 +2,7 @@ package com.mehdi.banking_api.service;
 
 import com.mehdi.banking_api.dto.request.CreateAccountRequest;
 import com.mehdi.banking_api.dto.response.AccountResponse;
+import com.mehdi.banking_api.exception.BusinessException;
 import com.mehdi.banking_api.exception.ForbiddenException;
 import com.mehdi.banking_api.model.Account;
 import com.mehdi.banking_api.model.User;
@@ -70,5 +71,20 @@ public class AccountService {
         Account saved = accountRepository.save(account);
 
         return new AccountResponse(saved.getId(), saved.getIban(), saved.getBalance(), saved.getType());
+    }
+
+    public void delete(String iban, User connectedUser) {
+        Account account = accountRepository.findByIban(iban)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + iban));
+
+        if (!account.getOwner().getId().equals(connectedUser.getId())) {
+            throw new ForbiddenException();
+        }
+
+        if (account.getBalance().compareTo(BigDecimal.ZERO) != 0) {
+            throw new BusinessException("Account balance must be zero before deletion.");
+        }
+
+        accountRepository.delete(account);
     }
 }
