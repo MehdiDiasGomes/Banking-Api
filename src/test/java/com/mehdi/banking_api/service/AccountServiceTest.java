@@ -2,11 +2,15 @@ package com.mehdi.banking_api.service;
 
 import com.mehdi.banking_api.dto.request.CreateAccountRequest;
 import com.mehdi.banking_api.dto.response.AccountResponse;
+import com.mehdi.banking_api.exception.BusinessException;
+import com.mehdi.banking_api.exception.ForbiddenException;
 import com.mehdi.banking_api.exception.ResourceNotFoundException;
 import com.mehdi.banking_api.model.Account;
 import com.mehdi.banking_api.model.AccountType;
+import com.mehdi.banking_api.model.Transaction;
 import com.mehdi.banking_api.model.User;
 import com.mehdi.banking_api.repository.AccountRepository;
+import com.mehdi.banking_api.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -29,6 +33,9 @@ class AccountServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
+
+    @Mock
+    private TransactionRepository transactionRepository;
 
     @InjectMocks
     private AccountService accountService;
@@ -110,5 +117,160 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.findEntityById(id))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(id.toString());
+    }
+
+    // ── delete ───────────────────────────────────────────────────────────────────
+
+    @Test
+    void delete_zeroBalance_deletesAccountAndItsTransactions() {
+        User user = buildUser();
+        Account account = Account.builder()
+                .id(UUID.randomUUID()).iban("LU001").balance(BigDecimal.ZERO)
+                .type(AccountType.CHECKING).owner(user).build();
+
+        when(accountRepository.findByIban("LU001")).thenReturn(Optional.of(account));
+        when(transactionRepository.findBySenderOrReceiver(account, account)).thenReturn(List.of());
+
+        accountService.delete("LU001", null, user);
+
+        verify(transactionRepository).deleteAll(List.of());
+        verify(accountRepository).delete(account);
+    }
+
+    @Test
+    void delete_withBalance_transfersToDestinationThenDeletes() {
+        User user = buildUser();
+        Account source = Account.builder()
+                .id(UUID.randomUUID()).iban("LU001").balance(new BigDecimal("500.00"))
+                .type(AccountType.CHECKING).owner(user).build();
+        Account destination = Account.builder()
+                .id(UUID.randomUUID()).iban("LU002").balance(new BigDecimal("100.00"))
+                .type(AccountType.SAVINGS).owner(user).build();
+
+        when(accountRepository.findByIban("LU001")).thenReturn(Optional.of(source));
+        when(accountRepository.findByIban("LU002")).thenReturn(Optional.of(destination));
+        when(transactionRepository.findBySenderOrReceiver(source, source)).thenReturn(List.of());
+
+        accountService.delete("LU001", "LU002", user);
+
+        assertThat(destination.getBalance()).isEqualByComparingTo("600.00");
+        assertThat(source.getBalance()).isEqualByComparingTo("0");
+
+        ArgumentCaptor<Account> captor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository, times(2)).save(captor.capture());
+        assertThat(captor.getAllValues()).extracting(Account::getIban)
+                .containsExactlyInAnyOrder("LU002", "LU001");
+
+        verify(accountRepository).delete(source);
+    }
+
+    @Test
+    void delete_withBalance_noTransferIban_throwsBusinessException() {
+        User user = buildUser();
+        Account account = Account.builder()
+                .id(UUID.randomUUID()).iban("LU001").balance(new BigDecimal("200.00"))
+                .type(AccountType.CHECKING).owner(user).build();
+
+        when(accountRepository.findByIban("LU001")).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> accountService.delete("LU001", null, user))
+                .isInstanceOf(BusinessException.class);
+
+        verify(accountRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_withBalance_blankTransferIban_throwsBusinessException() {
+        User user = buildUser();
+        Account account = Account.builder()
+                .id(UUID.randomUUID()).iban("LU001").balance(new BigDecimal("50.00"))
+                .type(AccountType.CHECKING).owner(user).build();
+
+        when(accountRepository.findByIban("LU001")).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> accountService.delete("LU001", "   ", user))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void delete_accountNotOwnedByUser_throwsForbiddenException() {
+        User owner = buildUser();
+        User attacker = User.builder().id(UUID.randomUUID()).build();
+        Account account = Account.builder()
+                .id(UUID.randomUUID()).iban("LU001").balance(BigDecimal.ZERO)
+                .owner(owner).build();
+
+        when(accountRepository.findByIban("LU001")).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> accountService.delete("LU001", null, attacker))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(accountRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_destinationNotFound_throwsResourceNotFoundException() {
+        User user = buildUser();
+        Account source = Account.builder()
+                .id(UUID.randomUUID()).iban("LU001").balance(new BigDecimal("100.00"))
+                .owner(user).build();
+
+        when(accountRepository.findByIban("LU001")).thenReturn(Optional.of(source));
+        when(accountRepository.findByIban("LU999")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> accountService.delete("LU001", "LU999", user))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("LU999");
+    }
+
+    @Test
+    void delete_destinationOwnedByAnotherUser_throwsForbiddenException() {
+        User user = buildUser();
+        User otherUser = User.builder().id(UUID.randomUUID()).build();
+        Account source = Account.builder()
+                .id(UUID.randomUUID()).iban("LU001").balance(new BigDecimal("100.00"))
+                .owner(user).build();
+        Account destination = Account.builder()
+                .id(UUID.randomUUID()).iban("LU002").balance(BigDecimal.ZERO)
+                .owner(otherUser).build();
+
+        when(accountRepository.findByIban("LU001")).thenReturn(Optional.of(source));
+        when(accountRepository.findByIban("LU002")).thenReturn(Optional.of(destination));
+
+        assertThatThrownBy(() -> accountService.delete("LU001", "LU002", user))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(accountRepository, never()).delete(any());
+    }
+
+    @Test
+    void delete_accountNotFound_throwsResourceNotFoundException() {
+        User user = buildUser();
+        when(accountRepository.findByIban("LU404")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> accountService.delete("LU404", null, user))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("LU404");
+    }
+
+    @Test
+    void delete_withBalance_deletesTransactionsBeforeAccount() {
+        User user = buildUser();
+        Account source = Account.builder()
+                .id(UUID.randomUUID()).iban("LU001").balance(new BigDecimal("100.00"))
+                .owner(user).build();
+        Account destination = Account.builder()
+                .id(UUID.randomUUID()).iban("LU002").balance(BigDecimal.ZERO)
+                .owner(user).build();
+        Transaction tx = Transaction.builder().id(UUID.randomUUID()).build();
+
+        when(accountRepository.findByIban("LU001")).thenReturn(Optional.of(source));
+        when(accountRepository.findByIban("LU002")).thenReturn(Optional.of(destination));
+        when(transactionRepository.findBySenderOrReceiver(source, source)).thenReturn(List.of(tx));
+
+        accountService.delete("LU001", "LU002", user);
+
+        verify(transactionRepository).deleteAll(List.of(tx));
+        verify(accountRepository).delete(source);
     }
 }

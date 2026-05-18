@@ -60,16 +60,16 @@ public class AccountController {
         return ResponseEntity.ok(accountService.deposit(iban, request.getAmount(), getAuthenticatedUser()));
     }
 
-    @Operation(summary = "Delete account", description = "Deletes the account identified by IBAN in the request body. Account must have a zero balance and belong to the authenticated user.")
+    @Operation(summary = "Delete account", description = "Closes the account identified by IBAN. If balance > 0, transferToIban must be provided: funds are moved atomically before deletion.")
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Account deleted"),
-        @ApiResponse(responseCode = "400", description = "Account balance is not zero"),
+        @ApiResponse(responseCode = "204", description = "Account closed"),
+        @ApiResponse(responseCode = "400", description = "Account has funds but no destination provided"),
         @ApiResponse(responseCode = "403", description = "Account does not belong to authenticated user"),
-        @ApiResponse(responseCode = "404", description = "Account not found")
+        @ApiResponse(responseCode = "404", description = "Account or destination not found")
     })
     @DeleteMapping
     public ResponseEntity<Void> delete(@RequestBody @Valid DeleteAccountRequest request) {
-        accountService.delete(request.iban(), getAuthenticatedUser());
+        accountService.delete(request.iban(), request.transferToIban(), getAuthenticatedUser());
         return ResponseEntity.noContent().build();
     }
 

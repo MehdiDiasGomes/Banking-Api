@@ -7,8 +7,10 @@ import com.mehdi.banking_api.exception.ForbiddenException;
 import com.mehdi.banking_api.model.Account;
 import com.mehdi.banking_api.model.User;
 import com.mehdi.banking_api.repository.AccountRepository;
+import com.mehdi.banking_api.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.mehdi.banking_api.exception.ResourceNotFoundException;
 
 import org.iban4j.CountryCode;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccountService {
     private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
 
     private String generateIban() {
         // Account number: last 13 digits of current millis, zero-padded (LU BBAN = 3 bank + 13 account)
@@ -73,7 +76,8 @@ public class AccountService {
         return new AccountResponse(saved.getId(), saved.getIban(), saved.getBalance(), saved.getType());
     }
 
-    public void delete(String iban, User connectedUser) {
+    @Transactional
+    public void delete(String iban, String transferToIban, User connectedUser) {
         Account account = accountRepository.findByIban(iban)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + iban));
 
@@ -82,9 +86,24 @@ public class AccountService {
         }
 
         if (account.getBalance().compareTo(BigDecimal.ZERO) != 0) {
-            throw new BusinessException("Account balance must be zero before deletion.");
+            if (transferToIban == null || transferToIban.isBlank()) {
+                throw new BusinessException("Account has funds. Provide a destination account to transfer the balance before closing.");
+            }
+
+            Account destination = accountRepository.findByIban(transferToIban)
+                    .orElseThrow(() -> new ResourceNotFoundException("Destination account not found: " + transferToIban));
+
+            if (!destination.getOwner().getId().equals(connectedUser.getId())) {
+                throw new ForbiddenException("Destination account does not belong to you.");
+            }
+
+            destination.setBalance(destination.getBalance().add(account.getBalance()));
+            account.setBalance(BigDecimal.ZERO);
+            accountRepository.save(destination);
+            accountRepository.save(account);
         }
 
+        transactionRepository.deleteAll(transactionRepository.findBySenderOrReceiver(account, account));
         accountRepository.delete(account);
     }
 }
