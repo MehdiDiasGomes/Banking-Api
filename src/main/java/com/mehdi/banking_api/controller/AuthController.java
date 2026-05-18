@@ -12,10 +12,8 @@ import org.springframework.http.ResponseCookie;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 
 @Tag(name = "Authentication", description = "Register and login — JWT delivered as HttpOnly cookie")
 @RestController
@@ -36,16 +34,26 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Register", description = "Create a new account. Sets a JWT cookie on success.")
+    @Operation(summary = "Register", description = "Create a new account. A verification email is sent to the provided address.")
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "User created"),
-        @ApiResponse(responseCode = "500", description = "Email already in use")
+        @ApiResponse(responseCode = "201", description = "User created — verification email sent"),
+        @ApiResponse(responseCode = "409", description = "Email already in use")
     })
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequest request, HttpServletResponse response) {
-        String token = authService.register(request);
-        addJwtCookie(response, token);
+    public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequest request) {
+        authService.register(request);
         return ResponseEntity.status(201).build();
+    }
+
+    @Operation(summary = "Verify email", description = "Activates the account linked to the given verification token.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Account verified"),
+        @ApiResponse(responseCode = "400", description = "Invalid or expired token")
+    })
+    @GetMapping("/verify")
+    public ResponseEntity<Void> verify(@RequestParam String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Logout", description = "Clears the JWT cookie.")

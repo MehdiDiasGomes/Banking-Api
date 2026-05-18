@@ -2,7 +2,6 @@ package com.mehdi.banking_api.service;
 
 import com.mehdi.banking_api.dto.request.LoginRequest;
 import com.mehdi.banking_api.dto.request.RegisterRequest;
-import com.mehdi.banking_api.dto.response.AuthResponse;
 import com.mehdi.banking_api.exception.BusinessException;
 import com.mehdi.banking_api.exception.ResourceNotFoundException;
 import com.mehdi.banking_api.model.User;
@@ -12,11 +11,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final MailService mailService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public String login(LoginRequest request) {
@@ -27,18 +30,40 @@ public class AuthService {
             throw new BusinessException("Incorrect password");
         }
 
+        if (!user.isVerified()) {
+            throw new BusinessException("Please verify your email before logging in");
+        }
+
         return jwtService.generateToken(user.getEmail());
     }
 
-    public String register(RegisterRequest request) {
+    public void register(RegisterRequest request) {
+        String verificationToken = UUID.randomUUID().toString();
+
         User user = User.builder()
                 .email(request.getEmail())
                 .password(encoder.encode(request.getPassword()))
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .verificationToken(verificationToken)
+                .tokenExpiresAt(LocalDateTime.now().plusHours(24))
                 .build();
 
         userRepository.save(user);
-        return jwtService.generateToken(user.getEmail());
+        mailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationToken);
+    }
+
+    public void verifyEmail(String token) {
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new BusinessException("Invalid verification token"));
+
+        if (LocalDateTime.now().isAfter(user.getTokenExpiresAt())) {
+            throw new BusinessException("Verification token has expired");
+        }
+
+        user.setVerified(true);
+        user.setVerificationToken(null);
+        user.setTokenExpiresAt(null);
+        userRepository.save(user);
     }
 }
