@@ -2,6 +2,7 @@ package com.mehdi.banking_api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mehdi.banking_api.dto.request.CreateAccountRequest;
+import com.mehdi.banking_api.dto.request.LoginRequest;
 import com.mehdi.banking_api.dto.request.RegisterRequest;
 import com.mehdi.banking_api.dto.request.TransferRequest;
 import com.mehdi.banking_api.model.AccountType;
@@ -73,9 +74,22 @@ class TransactionControllerIntegrationTest {
         req.setFirstName("User");
         req.setLastName("Test");
 
-        MockHttpServletResponse response = mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)));
+
+        userRepository.findByEmail(email).ifPresent(u -> {
+            u.setVerified(true);
+            userRepository.save(u);
+        });
+
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setEmail(email);
+        loginReq.setPassword("password123");
+
+        MockHttpServletResponse response = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .content(objectMapper.writeValueAsString(loginReq)))
                 .andReturn().getResponse();
 
         return new Cookie("jwt", response.getCookie("jwt").getValue());

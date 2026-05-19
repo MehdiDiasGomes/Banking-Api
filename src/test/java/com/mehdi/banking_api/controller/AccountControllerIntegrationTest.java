@@ -3,6 +3,7 @@ package com.mehdi.banking_api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mehdi.banking_api.dto.request.CreateAccountRequest;
 import com.mehdi.banking_api.dto.request.DeleteAccountRequest;
+import com.mehdi.banking_api.dto.request.LoginRequest;
 import com.mehdi.banking_api.dto.request.RegisterRequest;
 import com.mehdi.banking_api.model.AccountType;
 import com.mehdi.banking_api.repository.AccountRepository;
@@ -54,9 +55,22 @@ class AccountControllerIntegrationTest {
         req.setFirstName("Jane");
         req.setLastName("Doe");
 
-        MockHttpServletResponse response = mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)));
+
+        userRepository.findByEmail("account-user@test.com").ifPresent(u -> {
+            u.setVerified(true);
+            userRepository.save(u);
+        });
+
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setEmail("account-user@test.com");
+        loginReq.setPassword("password123");
+
+        MockHttpServletResponse response = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .content(objectMapper.writeValueAsString(loginReq)))
                 .andReturn().getResponse();
 
         jwtCookie = new Cookie("jwt", response.getCookie("jwt").getValue());
@@ -76,9 +90,22 @@ class AccountControllerIntegrationTest {
         req.setFirstName("Test");
         req.setLastName("User");
 
-        MockHttpServletResponse response = mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)));
+
+        userRepository.findByEmail(email).ifPresent(u -> {
+            u.setVerified(true);
+            userRepository.save(u);
+        });
+
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setEmail(email);
+        loginReq.setPassword("password123");
+
+        MockHttpServletResponse response = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .content(objectMapper.writeValueAsString(loginReq)))
                 .andReturn().getResponse();
 
         return new Cookie("jwt", response.getCookie("jwt").getValue());
