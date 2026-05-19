@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,15 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+
+    @Value("${app.cookie.secure}")
+    private boolean cookieSecure;
+
+    @Value("${app.cookie.domain}")
+    private String cookieDomain;
+
+    @Value("${app.cookie.same-site}")
+    private String cookieSameSite;
 
     @Operation(summary = "Login", description = "Authenticate with email and password. Sets a JWT cookie on success.")
     @ApiResponses({
@@ -71,14 +81,17 @@ public class AuthController {
     }
 
     private void setJwtCookie(HttpServletResponse response, String value, long maxAge) {
-        ResponseCookie cookie = ResponseCookie.from("jwt", value)
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from("jwt", value)
                 .httpOnly(true)
-                .secure(true)
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(maxAge)
-                .sameSite("None")
-                .domain(".mdiasgomes.com")
-                .build();
-        response.addHeader("Set-Cookie", cookie.toString());
+                .sameSite(cookieSameSite);
+
+        if (!cookieDomain.isBlank()) {
+            builder.domain(cookieDomain);
+        }
+
+        response.addHeader("Set-Cookie", builder.build().toString());
     }
 }
