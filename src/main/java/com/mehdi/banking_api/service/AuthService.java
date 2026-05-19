@@ -10,6 +10,7 @@ import com.mehdi.banking_api.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -20,7 +21,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final MailService mailService;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder encoder;
 
     public String login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
@@ -37,6 +38,7 @@ public class AuthService {
         return jwtService.generateToken(user.getEmail());
     }
 
+    @Transactional
     public void register(RegisterRequest request) {
         String verificationToken = UUID.randomUUID().toString();
 
@@ -53,6 +55,7 @@ public class AuthService {
         mailService.sendVerificationEmail(user.getEmail(), user.getFirstName(), verificationToken);
     }
 
+    @Transactional
     public void verifyEmail(String token) {
         User user = userRepository.findByVerificationToken(token)
                 .orElseThrow(() -> new BusinessException("Invalid verification token"));

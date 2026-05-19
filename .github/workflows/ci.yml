@@ -21,5 +21,12 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Check for debug logs
+        run: |
+          if grep -rn "System\.out\.print" src/main/java; then
+            echo "❌ System.out.print found in production code"
+            exit 1
+          fi
+
       - name: Run tests
         run: ./mvnw test -q
