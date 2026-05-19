@@ -13,9 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.mehdi.banking_api.exception.ResourceNotFoundException;
 
-import org.iban4j.CountryCode;
-import org.iban4j.Iban;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -27,14 +24,9 @@ public class AccountService {
     private final TransactionRepository transactionRepository;
 
     private String generateIban() {
-        // Account number: last 13 digits of current millis, zero-padded (LU BBAN = 3 bank + 13 account)
+        // XX = fictional country code (not ISO 3166-1), making this IBAN invalid for any real banking system
         String accountNumber = String.format("%013d", System.currentTimeMillis() % 10_000_000_000_000L);
-        return new Iban.Builder()
-                .countryCode(CountryCode.LU)
-                .bankCode("001")
-                .accountNumber(accountNumber)
-                .build()
-                .toString();
+        return "XX00" + "001" + accountNumber;
     }
 
     public AccountResponse save(User user, CreateAccountRequest request) {
