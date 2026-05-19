@@ -45,12 +45,11 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    void register_withValidRequest_returns201AndSetsCookie() throws Exception {
+    void register_withValidRequest_returns201() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(buildRegisterRequest("register@test.com"))))
-                .andExpect(status().isCreated())
-                .andExpect(cookie().exists("jwt"));
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -71,6 +70,11 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(buildRegisterRequest("login@test.com"))));
+
+        userRepository.findByEmail("login@test.com").ifPresent(u -> {
+            u.setVerified(true);
+            userRepository.save(u);
+        });
 
         LoginRequest login = new LoginRequest();
         login.setEmail("login@test.com");
