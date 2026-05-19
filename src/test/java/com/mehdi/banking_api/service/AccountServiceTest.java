@@ -75,7 +75,7 @@ class AccountServiceTest {
         ArgumentCaptor<Account> captor = ArgumentCaptor.forClass(Account.class);
         verify(accountRepository).save(captor.capture());
         assertThat(captor.getValue().getOwner()).isEqualTo(user);
-        assertThat(captor.getValue().getIban()).startsWith("LU");
+        assertThat(captor.getValue().getIban()).startsWith("XX");
     }
 
     @Test
