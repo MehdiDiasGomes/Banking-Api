@@ -30,6 +30,7 @@ public class User implements UserDetails {
     private String firstName;
     private String lastName;
 
+    @Column(columnDefinition = "boolean not null default false")
     private boolean verified;
 
     private String verificationToken;
@@ -56,5 +57,5 @@ public class User implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return verified; }
 }
